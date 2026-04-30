@@ -16,6 +16,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   useEffect(() => {
     if (data?.data?.cv_text) {
@@ -23,18 +24,28 @@ export default function ProfilePage() {
     }
   }, [data])
 
-  const handleTxtUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  const processCvFile = async (file: File) => {
     setUploadError(null)
 
-    if (!file) return
+    const fileName = file.name.toLowerCase()
+    const isTxtFile = file.type === 'text/plain' || fileName.endsWith('.txt')
+    const isPdfFile = file.type === 'application/pdf' || fileName.endsWith('.pdf')
+    const isDocxFile =
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      fileName.endsWith('.docx')
 
-    const isTxtFile =
-      file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt')
+    if (isPdfFile) {
+      setUploadError('PDF upload is coming next. For now, paste the CV text or upload a TXT file.')
+      return
+    }
+
+    if (isDocxFile) {
+      setUploadError('DOCX upload is coming next. For now, paste the CV text or upload a TXT file.')
+      return
+    }
 
     if (!isTxtFile) {
-      setUploadError('Only .txt files are supported for now.')
-      event.target.value = ''
+      setUploadError('Unsupported file type. For now, upload TXT or paste your CV text.')
       return
     }
 
@@ -43,16 +54,43 @@ export default function ProfilePage() {
 
       if (!text.trim()) {
         setUploadError('The uploaded file is empty.')
-        event.target.value = ''
         return
       }
 
       setCvText(text)
     } catch {
       setUploadError('Could not read the file. Please try again.')
-    } finally {
-      event.target.value = ''
     }
+  }
+
+  const handleFileInputChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+
+    if (!file) return
+
+    await processCvFile(file)
+    event.target.value = ''
+  }
+
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragging(false)
+
+    const file = event.dataTransfer.files?.[0]
+
+    if (!file) return
+
+    await processCvFile(file)
+  }
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragging(false)
   }
 
   const handleSave = async () => {
@@ -102,32 +140,41 @@ export default function ProfilePage() {
               ) : (
                 <div className="space-y-4">
                   <div className="space-y-3">
-                    <div className="rounded-lg border border-dashed p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <Label htmlFor="cv-upload" className="text-sm font-medium">
-                            Upload CV as TXT
-                          </Label>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Uploading a .txt file will fill the CV editor below. You can still edit it before saving.
-                          </p>
-                        </div>
-
-                        <Button variant="outline" asChild>
-                          <label htmlFor="cv-upload" className="cursor-pointer">
-                            <Upload className="mr-2 h-4 w-4" />
-                            Choose TXT file
-                          </label>
-                        </Button>
-
-                        <input
-                          id="cv-upload"
-                          type="file"
-                          accept=".txt,text/plain"
-                          className="hidden"
-                          onChange={handleTxtUpload}
-                        />
+                    <div
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      className={`rounded-lg border border-dashed p-4 text-center transition-colors ${isDragging
+                        ? 'border-primary bg-primary/10'
+                        : 'hover:bg-muted/40'
+                        }`}
+                    >
+                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted">
+                        <Upload className="h-4 w-4 text-muted-foreground" />
                       </div>
+
+                      <div className="mt-2">
+                        <Label htmlFor="cv-upload" className="text-sm font-medium">
+                          Drag and drop your CV here
+                        </Label>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          TXT works now. PDF and DOCX support are coming next.
+                        </p>
+                      </div>
+
+                      <Button variant="outline" asChild className="mt-4">
+                        <label htmlFor="cv-upload" className="cursor-pointer">
+                          Choose file
+                        </label>
+                      </Button>
+
+                      <input
+                        id="cv-upload"
+                        type="file"
+                        accept=".txt,.pdf,.docx,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        className="hidden"
+                        onChange={handleFileInputChange}
+                      />
 
                       {uploadError && (
                         <p className="mt-3 text-sm text-destructive">{uploadError}</p>
