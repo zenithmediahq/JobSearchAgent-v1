@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Loader2, Save, FileText, CheckCircle2, Upload } from 'lucide-react'
+import mammoth from 'mammoth'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
@@ -40,8 +41,21 @@ export default function ProfilePage() {
     }
 
     if (isDocxFile) {
-      setUploadError('DOCX upload is coming next. For now, paste the CV text or upload a TXT file.')
-      return
+      try {
+        const arrayBuffer = await file.arrayBuffer()
+        const result = await mammoth.extractRawText({ arrayBuffer })
+
+        if (!result.value.trim()) {
+          setUploadError('Could not extract text from this DOCX file.')
+          return
+        }
+
+        setCvText(result.value)
+        return
+      } catch {
+        setUploadError('Could not read the DOCX file. Please try another file or paste the CV text manually.')
+        return
+      }
     }
 
     if (!isTxtFile) {
@@ -158,11 +172,11 @@ export default function ProfilePage() {
                           Drag and drop your CV here
                         </Label>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          TXT works now. PDF and DOCX support are coming next.
+                          TXT and DOCX work now. PDF support is coming next.
                         </p>
                       </div>
 
-                      <Button variant="outline" asChild className="mt-4">
+                      <Button variant="outline" asChild size="sm" className="mt-3">
                         <label htmlFor="cv-upload" className="cursor-pointer">
                           Choose file
                         </label>
