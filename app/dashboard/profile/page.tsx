@@ -29,49 +29,38 @@ export default function ProfilePage() {
     setUploadError(null)
 
     const fileName = file.name.toLowerCase()
-    const isTxtFile = file.type === 'text/plain' || fileName.endsWith('.txt')
-    const isPdfFile = file.type === 'application/pdf' || fileName.endsWith('.pdf')
-    const isDocxFile =
-      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      fileName.endsWith('.docx')
+    const isSupported =
+      fileName.endsWith('.txt') ||
+      fileName.endsWith('.docx') ||
+      fileName.endsWith('.pdf')
 
-    if (isPdfFile) {
-      setUploadError('PDF upload is coming next. For now, paste the CV text or upload a TXT file.')
-      return
-    }
-
-    if (isDocxFile) {
-      try {
-        const arrayBuffer = await file.arrayBuffer()
-        const result = await mammoth.extractRawText({ arrayBuffer })
-
-        if (!result.value.trim()) {
-          setUploadError('Could not extract text from this DOCX file.')
-          return
-        }
-
-        setCvText(result.value)
-        return
-      } catch {
-        setUploadError('Could not read the DOCX file. Please try another file or paste the CV text manually.')
-        return
-      }
-    }
-
-    if (!isTxtFile) {
-      setUploadError('Unsupported file type. For now, upload TXT or paste your CV text.')
+    if (!isSupported) {
+      setUploadError('Unsupported file type. Upload TXT, DOCX, or PDF.')
       return
     }
 
     try {
-      const text = await file.text()
+      const formData = new FormData()
+      formData.append('file', file)
 
-      if (!text.trim()) {
-        setUploadError('The uploaded file is empty.')
+      const response = await fetch('/api/cv/parse', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setUploadError(data.error || 'Could not parse the uploaded file.')
         return
       }
 
-      setCvText(text)
+      if (!data.text?.trim()) {
+        setUploadError('The uploaded file did not contain readable text.')
+        return
+      }
+
+      setCvText(data.text)
     } catch {
       setUploadError('Could not read the file. Please try again.')
     }
@@ -172,7 +161,7 @@ export default function ProfilePage() {
                           Drag and drop your CV here
                         </Label>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          TXT and DOCX work now. PDF support is coming next.
+                          TXT and DOCX are supported. PDF support is coming next.
                         </p>
                       </div>
 
