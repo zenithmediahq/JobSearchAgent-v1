@@ -187,13 +187,13 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
                   <Lightbulb className="h-4 w-4" />
                   Tips for Your Application
                 </h4>
-                <ui className="mt-2 list-none space-y-2">
+                <ul className="mt-2 list-none space-y-2">
                   {analysis.tips.map((tip, i) => (
                     <li key={i} className="rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
                       {tip}
                     </li>
                   ))}
-                </ui>
+                </ul>
               </div>
             )}
           </div>
