@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Loader2, Save, FileText, CheckCircle2 } from 'lucide-react'
+import { Loader2, Save, FileText, CheckCircle2, Upload } from 'lucide-react'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
@@ -15,12 +15,45 @@ export default function ProfilePage() {
   const [cvText, setCvText] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (data?.data?.cv_text) {
       setCvText(data.data.cv_text)
     }
   }, [data])
+
+  const handleTxtUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    setUploadError(null)
+
+    if (!file) return
+
+    const isTxtFile =
+      file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt')
+
+    if (!isTxtFile) {
+      setUploadError('Only .txt files are supported for now.')
+      event.target.value = ''
+      return
+    }
+
+    try {
+      const text = await file.text()
+
+      if (!text.trim()) {
+        setUploadError('The uploaded file is empty.')
+        event.target.value = ''
+        return
+      }
+
+      setCvText(text)
+    } catch {
+      setUploadError('Could not read the file. Please try again.')
+    } finally {
+      event.target.value = ''
+    }
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -68,11 +101,44 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cv">CV Content</Label>
-                    <Textarea
-                      id="cv"
-                      placeholder="Paste your CV content here...
+                  <div className="space-y-3">
+                    <div className="rounded-lg border border-dashed p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <Label htmlFor="cv-upload" className="text-sm font-medium">
+                            Upload CV as TXT
+                          </Label>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Uploading a .txt file will fill the CV editor below. You can still edit it before saving.
+                          </p>
+                        </div>
+
+                        <Button variant="outline" asChild>
+                          <label htmlFor="cv-upload" className="cursor-pointer">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Choose TXT file
+                          </label>
+                        </Button>
+
+                        <input
+                          id="cv-upload"
+                          type="file"
+                          accept=".txt,text/plain"
+                          className="hidden"
+                          onChange={handleTxtUpload}
+                        />
+                      </div>
+
+                      {uploadError && (
+                        <p className="mt-3 text-sm text-destructive">{uploadError}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="cv">CV Content</Label>
+                      <Textarea
+                        id="cv"
+                        placeholder="Paste your CV content here...
 
 Example:
 John Doe
@@ -90,10 +156,11 @@ Skills:
 
 Education:
 - BS Computer Science, University Name"
-                      value={cvText}
-                      onChange={(e) => setCvText(e.target.value)}
-                      className="min-h-[400px] font-mono text-sm"
-                    />
+                        value={cvText}
+                        onChange={(e) => setCvText(e.target.value)}
+                        className="min-h-[400px] font-mono text-sm"
+                      />
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Button onClick={handleSave} disabled={saving || !cvText.trim()}>
@@ -128,7 +195,7 @@ Education:
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
                   1
                 </span>
-                <p>Paste your CV or resume text in the editor</p>
+                <p>Paste your CV or upload a TXT file</p>
               </div>
               <div className="flex gap-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
