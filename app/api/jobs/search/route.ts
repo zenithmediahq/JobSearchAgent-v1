@@ -117,6 +117,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
 
     const query = searchParams.get('query') || ''
+    const location = searchParams.get('location') || ''
     const page = searchParams.get('page')
       ? parseInt(searchParams.get('page')!, 10)
       : 1
@@ -143,8 +144,13 @@ export async function GET(request: NextRequest) {
     const limit = 20
     const offset = Math.max(page - 1, 0) * limit
 
+    const combinedQuery = [query, location]
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .join(' ')
+
     const params = new URLSearchParams({
-      q: query,
+      q: combinedQuery,
       limit: limit.toString(),
       offset: offset.toString(),
     })

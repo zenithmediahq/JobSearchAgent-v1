@@ -26,7 +26,9 @@ const fetcher = (url: string) => fetch(url).then((res) => {
 
 export default function DashboardPage() {
   const [query, setQuery] = useState('')
+  const [location, setLocation] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchLocation, setSearchLocation] = useState('')
   const [datePosted, setDatePosted] = useState('any')
   const [employmentType, setEmploymentType] = useState('')
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
@@ -41,8 +43,12 @@ export default function DashboardPage() {
       ? `&employment_types=${employmentType}`
       : ''
 
+  const locationParam = searchLocation
+    ? `&location=${encodeURIComponent(searchLocation)}`
+    : ''
+
   const searchUrl = searchQuery
-    ? `/api/jobs/search?query=${encodeURIComponent(searchQuery)}&date_posted=${datePosted}${employmentTypeParam}`
+    ? `/api/jobs/search?query=${encodeURIComponent(searchQuery)}${locationParam}&date_posted=${datePosted}${employmentTypeParam}`
     : null
 
   const { data, error, isLoading } = useSWR(searchUrl, fetcher)
@@ -68,6 +74,7 @@ export default function DashboardPage() {
       return
     }
     setSearchQuery(query)
+    setSearchLocation(location)
   }
 
   const handleSaveJob = useCallback(async (job: Job) => {
@@ -196,6 +203,17 @@ export default function DashboardPage() {
               />
             </div>
           </div>
+          <div className="w-full sm:w-56">
+            <Label htmlFor="location" className="sr-only">
+              Location
+            </Label>
+            <Input
+              id="location"
+              placeholder="Location, e.g. Skåne"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+          </div>
           <Select value={datePosted} onValueChange={setDatePosted}>
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Date posted" />
@@ -256,7 +274,8 @@ export default function DashboardPage() {
       {!isLoading && !error && jobs.length > 0 && (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Found {jobs.length} jobs matching &quot;{searchQuery}&quot;
+            Found {jobs.length} jobs matching &quot;{searchQuery}
+            {searchLocation ? ` in ${searchLocation}` : ''}&quot;
           </p>
           <div className="grid gap-4">
             {jobs.map((job) => (
