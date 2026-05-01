@@ -41,13 +41,13 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
       // Check if user has a CV
       const profileRes = await fetch('/api/profile')
       const profileData = await profileRes.json()
-      
+
       if (!profileData.data?.cv_text) {
         setHasCV(false)
         setLoading(false)
         return
       }
-      
+
       setHasCV(true)
 
       // Analyze the match
@@ -135,9 +135,9 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
               <p className="mt-1 text-sm text-muted-foreground">
                 {getScoreLabel(analysis.score)}
               </p>
-              <Progress 
-                value={analysis.score} 
-                className="mt-4 h-2" 
+              <Progress
+                value={analysis.score}
+                className="mt-4 h-2"
               />
             </div>
 
@@ -194,6 +194,83 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* ATS Scan */}
+            {analysis.atsScan && (
+              <div className="rounded-lg border p-4">
+                <h4 className="flex items-center gap-2 text-sm font-medium">
+                  <FileText className="h-4 w-4" />
+                  ATS Scan
+                </h4>
+
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Section Score</span>
+                      <span className="text-muted-foreground">
+                        {analysis.atsScan.sectionScore}%
+                      </span>
+                    </div>
+                    <Progress value={analysis.atsScan.sectionScore} className="mt-2 h-2" />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Keyword Score</span>
+                      <span className="text-muted-foreground">
+                        {analysis.atsScan.keywordScore}%
+                      </span>
+                    </div>
+                    <Progress value={analysis.atsScan.keywordScore} className="mt-2 h-2" />
+                  </div>
+                </div>
+
+                {analysis.atsScan.sectionFeedback.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium">CV Structure</p>
+                    <ul className="mt-2 list-none space-y-1">
+                      {analysis.atsScan.sectionFeedback.map((item, i) => (
+                        <li key={i} className="text-sm text-muted-foreground">
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {analysis.atsScan.missingKeywords.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium">Missing Keywords</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {analysis.atsScan.missingKeywords.slice(0, 10).map((keyword, i) => (
+                        <span
+                          key={i}
+                          className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {analysis.atsScan.improvementTips.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium">ATS Improvement Tips</p>
+                    <ul className="mt-2 list-none space-y-2">
+                      {analysis.atsScan.improvementTips.map((tip, i) => (
+                        <li
+                          key={i}
+                          className="rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground"
+                        >
+                          {tip}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
           </div>

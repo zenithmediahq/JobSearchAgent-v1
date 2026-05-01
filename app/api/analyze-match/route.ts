@@ -115,6 +115,77 @@ function fallbackAnalyzeMatch(cv: string, jobTitle: string, jobSummary: string) 
   }
 }
 
+function runAtsScan(cv: string, jobTitle: string, jobSummary: string) {
+  const lowerCv = cv.toLowerCase()
+
+  const requiredSections = [
+    {
+      name: 'experience',
+      labels: ['experience', 'work experience', 'arbetslivserfarenhet', 'erfarenhet'],
+    },
+    {
+      name: 'education',
+      labels: ['education', 'utbildning'],
+    },
+    {
+      name: 'skills',
+      labels: ['skills', 'technical skills', 'kompetenser', 'färdigheter'],
+    },
+    {
+      name: 'contact',
+      labels: ['email', '@', 'phone', 'telefon', 'linkedin'],
+    },
+  ]
+
+  const foundSections = requiredSections.filter((section) =>
+    section.labels.some((label) => lowerCv.includes(label))
+  )
+
+  const sectionScore = Math.round(
+    (foundSections.length / requiredSections.length) * 100
+  )
+
+  const cvKeywords = extractKeywords(cv)
+  const jobKeywords = extractKeywords(`${jobTitle} ${jobSummary}`)
+
+  const foundKeywords = jobKeywords
+    .filter((keyword) => cvKeywords.includes(keyword))
+    .slice(0, 12)
+
+  const missingKeywords = jobKeywords
+    .filter((keyword) => !cvKeywords.includes(keyword))
+    .slice(0, 12)
+
+  const keywordScore =
+    jobKeywords.length > 0
+      ? Math.round((foundKeywords.length / Math.min(jobKeywords.length, 30)) * 100)
+      : 0
+
+  const sectionFeedback = requiredSections.map((section) => {
+    const found = section.labels.some((label) => lowerCv.includes(label))
+
+    return found
+      ? `Found a likely ${section.name} section.`
+      : `Could not clearly find a ${section.name} section.`
+  })
+
+  const improvementTips = [
+    'Use clear section headings such as Experience, Skills, Education, and Contact.',
+    'Mirror important keywords from the job ad naturally in your CV.',
+    'Use simple formatting so ATS systems can read the text correctly.',
+    'Add measurable achievements where possible, not only responsibilities.',
+  ]
+
+  return {
+    sectionScore,
+    keywordScore: Math.min(100, keywordScore),
+    foundKeywords,
+    missingKeywords,
+    sectionFeedback,
+    improvementTips,
+  }
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -181,8 +252,17 @@ Keep the answer practical, honest, and concise.`,
       throw new Error('Gemini returned no output')
     }
 
+    const atsScan = runAtsScan(
+      validation.data.cv,
+      validation.data.jobTitle,
+      validation.data.jobSummary
+    )
+
     return NextResponse.json({
-      analysis: result.output,
+      analysis: {
+        ...result.output,
+        atsScan,
+      },
       source: 'gemini',
     })
   } catch (aiError) {
@@ -194,8 +274,17 @@ Keep the answer practical, honest, and concise.`,
       validation.data.jobSummary
     )
 
+    const atsScan = runAtsScan(
+      validation.data.cv,
+      validation.data.jobTitle,
+      validation.data.jobSummary
+    )
+
     return NextResponse.json({
-      analysis: fallbackAnalysis,
+      analysis: {
+        ...fallbackAnalysis,
+        atsScan,
+      },
       source: 'fallback',
       message: 'Gemini was unavailable, so fallback keyword scoring was used.',
     })

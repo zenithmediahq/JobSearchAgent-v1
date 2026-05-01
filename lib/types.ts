@@ -20,12 +20,22 @@ export interface SavedJob extends Job {
   updated_at: string
 }
 
+export interface AtsScan {
+  sectionScore: number
+  keywordScore: number
+  foundKeywords: string[]
+  missingKeywords: string[]
+  sectionFeedback: string[]
+  improvementTips: string[]
+}
+
 export interface MatchAnalysis {
   score: number
   summary: string
   strengths: string[]
   gaps: string[]
   tips: string[]
+  atsScan?: AtsScan
 }
 
 export interface Profile {
