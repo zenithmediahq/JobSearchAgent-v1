@@ -59,6 +59,27 @@ pnpm dev
 pnpm build
 ```
 
+## Supabase setup
+
+This app needs two Supabase tables:
+
+- `profiles`
+- `saved_jobs`
+
+To set up a new Supabase project:
+
+1. Create a Supabase project.
+2. Add the values to `.env.local`.
+3. Open Supabase SQL Editor.
+4. Run the SQL from `supabase/schema.sql`.
+
+Required environment variables:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+GOOGLE_GENERATIVE_AI_API_KEY=
+
 ## Current status
 
 This is not the final product yet. It is a UI/auth/database foundation.
