@@ -10,7 +10,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Loader2, AlertCircle, FileText } from 'lucide-react'
+import { Loader2, AlertCircle, FileText, Copy, Check } from 'lucide-react'
 
 interface ApplicationPackModalProps {
     job: Job | null
@@ -31,6 +31,7 @@ export function ApplicationPackModal({ job, open, onOpenChange }: ApplicationPac
     const [error, setError] = useState<string | null>(null)
     const [result, setResult] = useState<ApplicationPackResult | null>(null)
     const [hasCV, setHasCV] = useState<boolean | null>(null)
+    const [copied, setCopied] = useState<string | null>(null)
 
     useEffect(() => {
         if (open && job) {
@@ -89,6 +90,13 @@ export function ApplicationPackModal({ job, open, onOpenChange }: ApplicationPac
         }
     }
 
+    const handleCopy = async (text: string, key: string) => {
+        await navigator.clipboard.writeText(text)
+        setCopied(key)
+        setTimeout(() => setCopied(null), 2000)
+    }
+
+
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -133,14 +141,54 @@ export function ApplicationPackModal({ job, open, onOpenChange }: ApplicationPac
                 {!loading && !error && result && (
                     <div className="space-y-6">
                         <section>
-                            <h4 className="text-sm font-medium mb-2">Motivation</h4>
+                            <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium">Motivation</h4>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 gap-1.5 text-xs"
+                                    onClick={() => handleCopy(result.motivation, 'motivation')}
+                                >
+                                    {copied === 'motivation' ? (
+                                        <>
+                                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                            <span className="text-emerald-500">Copied</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="h-3.5 w-3.5" />
+                                            Copy
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
                             <div className="rounded-md bg-muted p-3 text-sm leading-relaxed">
                                 {result.motivation}
                             </div>
                         </section>
 
                         <section>
-                            <h4 className="text-sm font-medium mb-2">Cover Letter</h4>
+                            <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium">Cover Letter</h4>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 gap-1.5 text-xs"
+                                    onClick={() => handleCopy(result.coverLetter, 'coverLetter')}
+                                >
+                                    {copied === 'coverLetter' ? (
+                                        <>
+                                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                            <span className="text-emerald-500">Copied</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="h-3.5 w-3.5" />
+                                            Copy
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
                             <div className="rounded-md bg-muted p-3 text-sm leading-relaxed whitespace-pre-wrap">
                                 {result.coverLetter}
                             </div>
