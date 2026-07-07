@@ -346,102 +346,104 @@ export function MatchAnalysisModal({
                 )}
               </div>
             )}
+
+            {/* Application Pack */}
+            <div className="rounded-lg border p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h4 className="text-sm font-medium">Application Pack</h4>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Generate application text, CV bullet suggestions, and
+                    keywords for this job.
+                  </p>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateApplicationPack}
+                  disabled={packLoading}
+                >
+                  {packLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Generate Pack
+                </Button>
+              </div>
+
+              {packError && (
+                <p className="mt-3 text-sm text-destructive">{packError}</p>
+              )}
+
+              {applicationPack && (
+                <div className="mt-4 space-y-5">
+                  <div>
+                    <p className="text-sm font-medium">Short Motivation</p>
+                    <p className="mt-2 rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
+                      {applicationPack.shortMotivation}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium">Cover Letter Draft</p>
+                    <p className="mt-2 whitespace-pre-line rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
+                      {applicationPack.coverLetter}
+                    </p>
+                  </div>
+
+                  {applicationPack.cvBullets.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium">
+                        CV Bullet Suggestions
+                      </p>
+                      <ul className="mt-2 list-none space-y-2">
+                        {applicationPack.cvBullets.map((bullet, i) => (
+                          <li
+                            key={i}
+                            className="rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground"
+                          >
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {applicationPack.keywordsToInclude.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium">Keywords to Include</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {applicationPack.keywordsToInclude.map((keyword, i) => (
+                          <span
+                            key={i}
+                            className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                          >
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {applicationPack.doNotOverclaim.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium">Do Not Overclaim</p>
+                      <ul className="mt-2 list-none space-y-2">
+                        {applicationPack.doNotOverclaim.map((item, i) => (
+                          <li
+                            key={i}
+                            className="rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground"
+                          >
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
-
-        {/* Application Pack */}
-        <div className="rounded-lg border p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h4 className="text-sm font-medium">Application Pack</h4>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Generate application text, CV bullet suggestions, and keywords
-                for this job.
-              </p>
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={handleGenerateApplicationPack}
-              disabled={packLoading}
-            >
-              {packLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Generate Pack
-            </Button>
-          </div>
-
-          {packError && (
-            <p className="mt-3 text-sm text-destructive">{packError}</p>
-          )}
-
-          {applicationPack && (
-            <div className="mt-4 space-y-5">
-              <div>
-                <p className="text-sm font-medium">Short Motivation</p>
-                <p className="mt-2 rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
-                  {applicationPack.shortMotivation}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium">Cover Letter Draft</p>
-                <p className="mt-2 whitespace-pre-line rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
-                  {applicationPack.coverLetter}
-                </p>
-              </div>
-
-              {applicationPack.cvBullets.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium">CV Bullet Suggestions</p>
-                  <ul className="mt-2 list-none space-y-2">
-                    {applicationPack.cvBullets.map((bullet, i) => (
-                      <li
-                        key={i}
-                        className="rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground"
-                      >
-                        {bullet}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {applicationPack.keywordsToInclude.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium">Keywords to Include</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {applicationPack.keywordsToInclude.map((keyword, i) => (
-                      <span
-                        key={i}
-                        className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
-                      >
-                        {keyword}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {applicationPack.doNotOverclaim.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium">Do Not Overclaim</p>
-                  <ul className="mt-2 list-none space-y-2">
-                    {applicationPack.doNotOverclaim.map((item, i) => (
-                      <li
-                        key={i}
-                        className="rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground"
-                      >
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </DialogContent>
     </Dialog>
   );
