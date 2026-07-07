@@ -1,89 +1,136 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Job, MatchAnalysis } from '@/lib/types'
+import { useState, useEffect } from "react";
+import { Job, MatchAnalysis, ApplicationPack } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { Loader2, CheckCircle2, AlertCircle, Lightbulb, FileText } from 'lucide-react'
-import { cn } from '@/lib/utils'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import {
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Lightbulb,
+  FileText,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MatchAnalysisModalProps {
-  job: Job | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  job: Job | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisModalProps) {
-  const [loading, setLoading] = useState(false)
-  const [analysis, setAnalysis] = useState<MatchAnalysis | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [hasCV, setHasCV] = useState<boolean | null>(null)
+export function MatchAnalysisModal({
+  job,
+  open,
+  onOpenChange,
+}: MatchAnalysisModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [analysis, setAnalysis] = useState<MatchAnalysis | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [hasCV, setHasCV] = useState<boolean | null>(null);
+  const [applicationPack, setApplicationPack] =
+    useState<ApplicationPack | null>(null);
+  const [packLoading, setPackLoading] = useState(false);
+  const [packError, setPackError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && job) {
-      checkCVAndAnalyze()
+      setApplicationPack(null);
+      setPackError(null);
+      checkCVAndAnalyze();
     }
-  }, [open, job])
+  }, [open, job]);
 
   const checkCVAndAnalyze = async () => {
-    setLoading(true)
-    setError(null)
-    setAnalysis(null)
+    setLoading(true);
+    setError(null);
+    setAnalysis(null);
 
     try {
       // Check if user has a CV
-      const profileRes = await fetch('/api/profile')
-      const profileData = await profileRes.json()
+      const profileRes = await fetch("/api/profile");
+      const profileData = await profileRes.json();
 
       if (!profileData.data?.cv_text) {
-        setHasCV(false)
-        setLoading(false)
-        return
+        setHasCV(false);
+        setLoading(false);
+        return;
       }
 
-      setHasCV(true)
+      setHasCV(true);
 
       // Analyze the match
-      const res = await fetch('/api/analyze-match', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/analyze-match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jobTitle: job?.title,
           jobDescription: job?.summary,
           company: job?.company,
         }),
-      })
+      });
 
-      if (!res.ok) throw new Error('Failed to analyze match')
+      if (!res.ok) throw new Error("Failed to analyze match");
 
-      const data = await res.json()
-      setAnalysis(data.analysis)
+      const data = await res.json();
+      setAnalysis(data.analysis);
     } catch {
-      setError('Failed to analyze the match. Please try again.')
+      setError("Failed to analyze the match. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const handleGenerateApplicationPack = async () => {
+    if (!job) return;
+
+    setPackLoading(true);
+    setPackError(null);
+
+    try {
+      const response = await fetch("/api/application-pack", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobTitle: job.title,
+          company: job.company,
+          jobDescription: job.summary,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate application pack");
+      }
+
+      setApplicationPack(data.applicationPack);
+    } catch {
+      setPackError("Failed to generate application pack. Please try again.");
+    } finally {
+      setPackLoading(false);
+    }
+  };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-emerald-600'
-    if (score >= 60) return 'text-amber-600'
-    return 'text-slate-600'
-  }
+    if (score >= 80) return "text-emerald-600";
+    if (score >= 60) return "text-amber-600";
+    return "text-slate-600";
+  };
 
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return 'Excellent Match'
-    if (score >= 60) return 'Good Match'
-    if (score >= 40) return 'Moderate Match'
-    return 'Low Match'
-  }
+    if (score >= 80) return "Excellent Match";
+    if (score >= 60) return "Good Match";
+    if (score >= 40) return "Moderate Match";
+    return "Low Match";
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,7 +145,9 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
         {loading && (
           <div className="flex flex-col items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="mt-4 text-sm text-muted-foreground">Analyzing your CV match...</p>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Analyzing your CV match...
+            </p>
           </div>
         )}
 
@@ -107,9 +156,14 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
             <FileText className="h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 font-medium">No CV Found</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Add your CV in the Profile section to get AI-powered match analysis.
+              Add your CV in the Profile section to get AI-powered match
+              analysis.
             </p>
-            <Button className="mt-4" onClick={() => onOpenChange(false)} asChild>
+            <Button
+              className="mt-4"
+              onClick={() => onOpenChange(false)}
+              asChild
+            >
               <a href="/dashboard/profile">Go to Profile</a>
             </Button>
           </div>
@@ -119,7 +173,11 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <AlertCircle className="h-8 w-8 text-destructive" />
             <p className="mt-2 text-sm text-destructive">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={checkCVAndAnalyze}>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={checkCVAndAnalyze}
+            >
               Try Again
             </Button>
           </div>
@@ -129,21 +187,25 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
           <div className="space-y-6">
             {/* Score */}
             <div className="text-center">
-              <div className={cn('text-5xl font-bold', getScoreColor(analysis.score))}>
+              <div
+                className={cn(
+                  "text-5xl font-bold",
+                  getScoreColor(analysis.score),
+                )}
+              >
                 {analysis.score}%
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 {getScoreLabel(analysis.score)}
               </p>
-              <Progress
-                value={analysis.score}
-                className="mt-4 h-2"
-              />
+              <Progress value={analysis.score} className="mt-4 h-2" />
             </div>
 
             {/* Summary */}
             <div>
-              <p className="text-sm text-muted-foreground">{analysis.summary}</p>
+              <p className="text-sm text-muted-foreground">
+                {analysis.summary}
+              </p>
             </div>
 
             {/* Strengths */}
@@ -189,7 +251,10 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
                 </h4>
                 <ul className="mt-2 list-none space-y-2">
                   {analysis.tips.map((tip, i) => (
-                    <li key={i} className="rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
+                    <li
+                      key={i}
+                      className="rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground"
+                    >
                       {tip}
                     </li>
                   ))}
@@ -213,7 +278,10 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
                         {analysis.atsScan.sectionScore}%
                       </span>
                     </div>
-                    <Progress value={analysis.atsScan.sectionScore} className="mt-2 h-2" />
+                    <Progress
+                      value={analysis.atsScan.sectionScore}
+                      className="mt-2 h-2"
+                    />
                   </div>
 
                   <div>
@@ -223,7 +291,10 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
                         {analysis.atsScan.keywordScore}%
                       </span>
                     </div>
-                    <Progress value={analysis.atsScan.keywordScore} className="mt-2 h-2" />
+                    <Progress
+                      value={analysis.atsScan.keywordScore}
+                      className="mt-2 h-2"
+                    />
                   </div>
                 </div>
 
@@ -244,14 +315,16 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
                   <div className="mt-4">
                     <p className="text-sm font-medium">Missing Keywords</p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {analysis.atsScan.missingKeywords.slice(0, 10).map((keyword, i) => (
-                        <span
-                          key={i}
-                          className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
-                        >
-                          {keyword}
-                        </span>
-                      ))}
+                      {analysis.atsScan.missingKeywords
+                        .slice(0, 10)
+                        .map((keyword, i) => (
+                          <span
+                            key={i}
+                            className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                          >
+                            {keyword}
+                          </span>
+                        ))}
                     </div>
                   </div>
                 )}
@@ -275,7 +348,101 @@ export function MatchAnalysisModal({ job, open, onOpenChange }: MatchAnalysisMod
             )}
           </div>
         )}
+
+        {/* Application Pack */}
+        <div className="rounded-lg border p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h4 className="text-sm font-medium">Application Pack</h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Generate application text, CV bullet suggestions, and keywords
+                for this job.
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={handleGenerateApplicationPack}
+              disabled={packLoading}
+            >
+              {packLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Generate Pack
+            </Button>
+          </div>
+
+          {packError && (
+            <p className="mt-3 text-sm text-destructive">{packError}</p>
+          )}
+
+          {applicationPack && (
+            <div className="mt-4 space-y-5">
+              <div>
+                <p className="text-sm font-medium">Short Motivation</p>
+                <p className="mt-2 rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
+                  {applicationPack.shortMotivation}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium">Cover Letter Draft</p>
+                <p className="mt-2 whitespace-pre-line rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
+                  {applicationPack.coverLetter}
+                </p>
+              </div>
+
+              {applicationPack.cvBullets.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium">CV Bullet Suggestions</p>
+                  <ul className="mt-2 list-none space-y-2">
+                    {applicationPack.cvBullets.map((bullet, i) => (
+                      <li
+                        key={i}
+                        className="rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground"
+                      >
+                        {bullet}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {applicationPack.keywordsToInclude.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium">Keywords to Include</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {applicationPack.keywordsToInclude.map((keyword, i) => (
+                      <span
+                        key={i}
+                        className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                      >
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {applicationPack.doNotOverclaim.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium">Do Not Overclaim</p>
+                  <ul className="mt-2 list-none space-y-2">
+                    {applicationPack.doNotOverclaim.map((item, i) => (
+                      <li
+                        key={i}
+                        className="rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground"
+                      >
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
