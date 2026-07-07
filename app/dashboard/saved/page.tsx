@@ -1,10 +1,11 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import useSWR from 'swr'
 import { createClient } from '@/lib/supabase/client'
 import { SavedJob } from '@/lib/types'
 import { JobCard } from '@/components/job-card'
+import { ApplicationPackModal } from '@/components/application-pack-modal'
 import { Loader2, BookmarkX } from 'lucide-react'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -12,6 +13,8 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json())
 export default function SavedJobsPage() {
   const { data, error, isLoading, mutate } = useSWR('/api/saved-jobs', fetcher)
   const supabase = createClient()
+  const [selectedJob, setSelectedJob] = useState<SavedJob | null>(null)
+  const [showApplicationPackModal, setShowApplicationPackModal] = useState(false)
 
   const handleUnsave = useCallback(async (jobId: string) => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -25,6 +28,11 @@ export default function SavedJobsPage() {
 
     mutate()
   }, [supabase, mutate])
+
+  const handleApplicationPack = useCallback((job: SavedJob) => {
+    setSelectedJob(job)
+    setShowApplicationPackModal(true)
+  }, [])
 
   const savedJobs: SavedJob[] = data?.data || []
 
@@ -73,12 +81,19 @@ export default function SavedJobsPage() {
                 job={job}
                 isSaved
                 onUnsave={handleUnsave}
+                onApplicationPack={handleApplicationPack}
                 showStatus
               />
             ))}
           </div>
         </div>
       )}
+
+      <ApplicationPackModal
+        job={selectedJob}
+        open={showApplicationPackModal}
+        onOpenChange={setShowApplicationPackModal}
+      />
     </div>
   )
 }

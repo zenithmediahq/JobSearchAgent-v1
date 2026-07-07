@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { Search, Loader2, AlertCircle } from 'lucide-react'
 import { MatchAnalysisModal } from '@/components/match-analysis-modal'
+import { ApplicationPackModal } from '@/components/application-pack-modal'
 
 const fetcher = (url: string) => fetch(url).then((res) => {
   if (!res.ok) throw new Error('Failed to fetch')
@@ -33,6 +34,7 @@ export default function DashboardPage() {
   const [employmentType, setEmploymentType] = useState('')
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
+  const [showApplicationPackModal, setShowApplicationPackModal] = useState(false)
 
   const supabase = createClient()
   const { toast } = useToast()
@@ -175,6 +177,11 @@ export default function DashboardPage() {
     setShowAnalysisModal(true)
   }
 
+  const handleApplicationPack = (job: Job) => {
+    setSelectedJob(job)
+    setShowApplicationPackModal(true)
+  }
+
   const jobs: Job[] = data?.data || []
 
   return (
@@ -286,6 +293,7 @@ export default function DashboardPage() {
                 onSave={handleSaveJob}
                 onUnsave={handleUnsaveJob}
                 onAnalyze={handleAnalyze}
+                onApplicationPack={handleApplicationPack}
               />
             ))}
           </div>
@@ -304,6 +312,11 @@ export default function DashboardPage() {
         job={selectedJob}
         open={showAnalysisModal}
         onOpenChange={setShowAnalysisModal}
+      />
+      <ApplicationPackModal
+        job={selectedJob}
+        open={showApplicationPackModal}
+        onOpenChange={setShowApplicationPackModal}
       />
     </div>
   )

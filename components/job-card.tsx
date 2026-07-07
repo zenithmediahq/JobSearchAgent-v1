@@ -15,6 +15,7 @@ import {
   Clock,
   Sparkles,
   Loader2,
+  FileText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -24,6 +25,7 @@ interface JobCardProps {
   onSave?: (job: Job) => Promise<void>
   onUnsave?: (jobId: string) => Promise<void>
   onAnalyze?: (job: Job | SavedJob) => void
+  onApplicationPack?: (job: Job | SavedJob) => void
   showStatus?: boolean
   onStatusChange?: (jobId: string, status: JobStatus) => Promise<void>
 }
@@ -34,6 +36,7 @@ export function JobCard({
   onSave,
   onUnsave,
   onAnalyze,
+  onApplicationPack,
   showStatus = false,
   onStatusChange,
 }: JobCardProps) {
@@ -73,7 +76,7 @@ export function JobCard({
     const date = new Date(dateString)
     const now = new Date()
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays === 0) return 'Today'
     if (diffDays === 1) return 'Yesterday'
     if (diffDays < 7) return `${diffDays} days ago`
@@ -90,8 +93,8 @@ export function JobCard({
                 {job.title}
               </h3>
               {showStatus && savedJob.status && (
-                <Badge 
-                  variant="secondary" 
+                <Badge
+                  variant="secondary"
                   className={cn('text-xs', STATUS_CONFIG[savedJob.status].color)}
                 >
                   {STATUS_CONFIG[savedJob.status].label}
@@ -109,16 +112,16 @@ export function JobCard({
               </span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-1">
             {savedJob.match_score !== undefined && (
-              <Badge 
-                variant="outline" 
+              <Badge
+                variant="outline"
                 className={cn(
                   'text-xs font-medium',
                   savedJob.match_score >= 80 ? 'border-emerald-500 text-emerald-600' :
-                  savedJob.match_score >= 60 ? 'border-amber-500 text-amber-600' :
-                  'border-slate-300 text-slate-600'
+                    savedJob.match_score >= 60 ? 'border-amber-500 text-amber-600' :
+                      'border-slate-300 text-slate-600'
                 )}
               >
                 {savedJob.match_score}% match
@@ -142,7 +145,7 @@ export function JobCard({
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="pt-0">
         <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
           <Badge variant="secondary" className="text-xs font-normal">
@@ -154,21 +157,32 @@ export function JobCard({
           </span>
           <span className="text-muted-foreground/60">via {job.source}</span>
         </div>
-        
+
         <p className="text-sm text-muted-foreground line-clamp-3">
           {job.summary}
         </p>
 
         <div className="mt-4 flex items-center gap-2 flex-wrap">
           {onAnalyze && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => onAnalyze(job)}
               className="gap-1.5"
             >
               <Sparkles className="h-3.5 w-3.5" />
               Analyze Match
+            </Button>
+          )}
+          {onApplicationPack && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onApplicationPack(job)}
+              className="gap-1.5"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Application Pack
             </Button>
           )}
           {job.url && job.url !== '#' && (

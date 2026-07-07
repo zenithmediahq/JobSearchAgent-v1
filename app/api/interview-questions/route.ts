@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 import { interviewQuestionsSchema } from '@/lib/api-schemas'
+import { createClient } from '@/lib/supabase/server'
 
 const questionsSchema = z.object({
   questions: z.array(z.string()).describe('List of interview questions'),
@@ -9,6 +10,13 @@ const questionsSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
 
     // Validate input
