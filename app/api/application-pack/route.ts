@@ -75,6 +75,10 @@ const fallbackStopWords = new Set([
   "besvara",
   "kunders",
   "problem",
+  "kundens",
+  "innebär",
+  "frågor",
+  "första",
 
   // English common/filler words
   "this",

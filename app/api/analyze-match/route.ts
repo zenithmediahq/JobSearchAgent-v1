@@ -165,6 +165,10 @@ const commonWords = new Set([
   "besvara",
   "kunders",
   "problem",
+  "kundens",
+  "innebär",
+  "frågor",
+  "första",
 
   // English common words
   "the",
