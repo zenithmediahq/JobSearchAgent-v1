@@ -17,6 +17,7 @@ import {
   AlertCircle,
   Lightbulb,
   FileText,
+  Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,7 @@ export function MatchAnalysisModal({
     useState<ApplicationPack | null>(null);
   const [packLoading, setPackLoading] = useState(false);
   const [packError, setPackError] = useState<string | null>(null);
+  const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && job) {
@@ -116,6 +118,16 @@ export function MatchAnalysisModal({
       setPackError("Failed to generate application pack. Please try again.");
     } finally {
       setPackLoading(false);
+    }
+  };
+
+  const handleCopy = async (text: string, section: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedSection(section);
+      window.setTimeout(() => setCopiedSection(null), 1500);
+    } catch {
+      setPackError("Could not copy text. Please copy it manually.");
     }
   };
 
@@ -377,14 +389,45 @@ export function MatchAnalysisModal({
               {applicationPack && (
                 <div className="mt-4 space-y-5">
                   <div>
-                    <p className="text-sm font-medium">Short Motivation</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium">Short Motivation</p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          handleCopy(
+                            applicationPack.shortMotivation,
+                            "shortMotivation",
+                          )
+                        }
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        {copiedSection === "shortMotivation"
+                          ? "Copied"
+                          : "Copy"}
+                      </Button>
+                    </div>
                     <p className="mt-2 rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
                       {applicationPack.shortMotivation}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium">Cover Letter Draft</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium">Cover Letter Draft</p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          handleCopy(applicationPack.coverLetter, "coverLetter")
+                        }
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        {copiedSection === "coverLetter" ? "Copied" : "Copy"}
+                      </Button>
+                    </div>
                     <p className="mt-2 whitespace-pre-line rounded-md bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
                       {applicationPack.coverLetter}
                     </p>
@@ -392,9 +435,25 @@ export function MatchAnalysisModal({
 
                   {applicationPack.cvBullets.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium">
-                        CV Bullet Suggestions
-                      </p>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-medium">
+                          CV Bullet Suggestions
+                        </p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            handleCopy(
+                              applicationPack.cvBullets.join("\n"),
+                              "cvBullets",
+                            )
+                          }
+                        >
+                          <Copy className="mr-2 h-4 w-4" />
+                          {copiedSection === "cvBullets" ? "Copied" : "Copy"}
+                        </Button>
+                      </div>
                       <ul className="mt-2 list-none space-y-2">
                         {applicationPack.cvBullets.map((bullet, i) => (
                           <li
