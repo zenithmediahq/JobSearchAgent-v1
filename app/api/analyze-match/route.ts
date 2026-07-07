@@ -30,6 +30,7 @@ const commonWords = new Set([
   "det",
   "den",
   "ett",
+  "dina",
   "din",
   "dig",
   "du",
@@ -97,6 +98,8 @@ const commonWords = new Set([
   "vill",
   "behöver",
   "söker",
+  "några",
+  "andra",
   "ser",
   "gärna",
   "mycket",
@@ -105,6 +108,21 @@ const commonWords = new Set([
   "goda",
   "stark",
   "starka",
+  "perfekt",
+  "spännande",
+  "etablerat",
+  "flexibelt",
+  "kombinera",
+  "kombinerar",
+  "möjlighet",
+  "ansökan",
+  "beslut",
+  "välgrundade",
+  "kristianstad",
+  "uppdrag",
+  "nytt",
+  "deltid",
+  "vecka",
   "intresse",
   "intresserad",
   "gillar",
@@ -126,14 +144,37 @@ const commonWords = new Set([
   "team",
   "gruppen",
   "tillsammans",
+  "ansvar",
+  "ansvara",
+  "ansvarar",
+  "arbeta",
+  "arbetar",
+  "arbetat",
+  "erbjuder",
+  "erbjuds",
+  "möjligheter",
+  "plats",
+  "platsen",
+  "området",
+  "arbetsbeskrivning",
+  "uppdraget",
+  "placering",
+  "företaget",
+  "kundernas",
+  "brinner",
+  "besvara",
+  "kunders",
+  "problem",
 
   // English common words
   "the",
   "and",
   "for",
   "with",
+  "from",
   "you",
   "your",
+  "have",
   "are",
   "this",
   "that",
@@ -142,6 +183,9 @@ const commonWords = new Set([
   "job",
   "role",
   "company",
+  "position",
+  "opportunity",
+  "apply",
   "team",
   "candidate",
   "experience",
@@ -156,18 +200,49 @@ const commonWords = new Set([
   "great",
   "people",
   "person",
+  "within",
+  "about",
+  "where",
+  "when",
+  "what",
+  "make",
+  "help",
+  "based",
+  "include",
+  "including",
+  "new",
+  "part",
+  "full",
+  "time",
+]);
+
+const allowedShortKeywords = new Set([
+  "c#",
+  "sql",
+  "api",
+  "crm",
+  "erp",
+  "css",
+  "git",
+  "ui",
+  "ux",
+  "it",
 ]);
 
 function extractKeywords(text: string) {
   return Array.from(
     new Set(
       text
+        .normalize("NFC")
         .toLowerCase()
-        .replace(/[^\p{L}\p{N}\s+#.-]/gu, " ")
+        .replace(/[.,!?;:()[\]{}"]/g, " ")
+        .replace(/[^\p{L}\p{N}+#.-]+/gu, " ")
         .split(/\s+/)
         .map((word) => word.trim())
+        .filter((word) => !word.endsWith("-"))
+        .map((word) => word.replace(/^[.-]+|[.-]+$/g, ""))
         .filter((word) => {
-          if (word.length < 3) return false;
+          if (word.length < 4 && !allowedShortKeywords.has(word)) return false;
           if (commonWords.has(word)) return false;
           if (/^\d+$/.test(word)) return false;
           return true;

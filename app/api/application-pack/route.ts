@@ -66,6 +66,15 @@ const fallbackStopWords = new Set([
   "nytt",
   "deltid",
   "vecka",
+  "arbetsbeskrivning",
+  "uppdraget",
+  "placering",
+  "företaget",
+  "kundernas",
+  "brinner",
+  "besvara",
+  "kunders",
+  "problem",
 
   // English common/filler words
   "this",
@@ -92,6 +101,7 @@ function extractApplicationKeywords(text: string) {
   return Array.from(
     new Set(
       text
+        .normalize("NFC")
         .toLowerCase()
         .replace(/[.,!?;:()[\]{}"]/g, " ")
         .replace(/[^\p{L}\p{N}+#.-]+/gu, " ")
