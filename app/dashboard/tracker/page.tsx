@@ -7,7 +7,6 @@ import { SavedJob, JobStatus, STATUS_CONFIG } from '@/lib/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ApplicationPackModal } from '@/components/application-pack-modal'
 import { useToast } from '@/hooks/use-toast'
 import {
   Loader2,
@@ -15,7 +14,6 @@ import {
   Building2,
   MapPin,
   ExternalLink,
-  FileText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -31,8 +29,6 @@ export default function TrackerPage() {
   const supabase = createClient()
   const { toast } = useToast()
   const [statusChanging, setStatusChanging] = useState<string | null>(null)
-  const [selectedJob, setSelectedJob] = useState<SavedJob | null>(null)
-  const [showApplicationPackModal, setShowApplicationPackModal] = useState(false)
 
   const handleStatusChange = useCallback(async (jobId: string, newStatus: JobStatus) => {
     const { data: { user } } = await supabase.auth.getUser()

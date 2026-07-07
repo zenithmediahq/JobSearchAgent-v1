@@ -5,7 +5,7 @@ import useSWR from 'swr'
 import { createClient } from '@/lib/supabase/client'
 import { SavedJob } from '@/lib/types'
 import { JobCard } from '@/components/job-card'
-import { ApplicationPackModal } from '@/components/application-pack-modal'
+import { MatchAnalysisModal } from '@/components/match-analysis-modal'
 import { Loader2, BookmarkX } from 'lucide-react'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -14,7 +14,7 @@ export default function SavedJobsPage() {
   const { data, error, isLoading, mutate } = useSWR('/api/saved-jobs', fetcher)
   const supabase = createClient()
   const [selectedJob, setSelectedJob] = useState<SavedJob | null>(null)
-  const [showApplicationPackModal, setShowApplicationPackModal] = useState(false)
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false)
 
   const handleUnsave = useCallback(async (jobId: string) => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -29,9 +29,9 @@ export default function SavedJobsPage() {
     mutate()
   }, [supabase, mutate])
 
-  const handleApplicationPack = useCallback((job: SavedJob) => {
+  const handleAnalyze = useCallback((job: SavedJob) => {
     setSelectedJob(job)
-    setShowApplicationPackModal(true)
+    setShowAnalysisModal(true)
   }, [])
 
   const savedJobs: SavedJob[] = data?.data || []
@@ -81,7 +81,7 @@ export default function SavedJobsPage() {
                 job={job}
                 isSaved
                 onUnsave={handleUnsave}
-                onApplicationPack={handleApplicationPack}
+                onAnalyze={() => handleAnalyze(job)}
                 showStatus
               />
             ))}
@@ -89,10 +89,11 @@ export default function SavedJobsPage() {
         </div>
       )}
 
-      <ApplicationPackModal
+      <MatchAnalysisModal
         job={selectedJob}
-        open={showApplicationPackModal}
-        onOpenChange={setShowApplicationPackModal}
+        savedJobId={selectedJob?.id}
+        open={showAnalysisModal}
+        onOpenChange={setShowAnalysisModal}
       />
     </div>
   )

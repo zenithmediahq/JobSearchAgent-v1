@@ -22,11 +22,15 @@ create table if not exists public.saved_jobs (
   url text,
   match_score integer,
   match_analysis jsonb,
+  application_pack jsonb,
   status text not null default 'saved',
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   unique(user_id, job_id)
 );
+
+alter table public.saved_jobs
+add column if not exists application_pack jsonb;
 
 alter table public.profiles enable row level security;
 alter table public.saved_jobs enable row level security;

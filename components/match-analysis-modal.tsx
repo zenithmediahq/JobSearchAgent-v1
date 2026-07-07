@@ -23,12 +23,14 @@ import { cn } from "@/lib/utils";
 
 interface MatchAnalysisModalProps {
   job: Job | null;
+  savedJobId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function MatchAnalysisModal({
   job,
+  savedJobId,
   open,
   onOpenChange,
 }: MatchAnalysisModalProps) {
@@ -44,6 +46,9 @@ export function MatchAnalysisModal({
     null,
   );
   const [packMessage, setPackMessage] = useState<string | null>(null);
+  const [packSaveLoading, setPackSaveLoading] = useState(false);
+  const [packSaveMessage, setPackSaveMessage] = useState<string | null>(null);
+  const [packSaveError, setPackSaveError] = useState<string | null>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,6 +57,8 @@ export function MatchAnalysisModal({
       setPackError(null);
       setPackSource(null);
       setPackMessage(null);
+      setPackSaveMessage(null);
+      setPackSaveError(null);
       checkCVAndAnalyze();
     }
   }, [open, job]);
@@ -104,6 +111,8 @@ export function MatchAnalysisModal({
     setPackSource(null);
     setPackMessage(null);
     setApplicationPack(null);
+    setPackSaveMessage(null);
+    setPackSaveError(null);
 
     try {
       const response = await fetch("/api/application-pack", {
@@ -129,6 +138,37 @@ export function MatchAnalysisModal({
       setPackError("Failed to generate application pack. Please try again.");
     } finally {
       setPackLoading(false);
+    }
+  };
+
+  const handleSaveApplicationPack = async () => {
+    if (!savedJobId || !applicationPack) return;
+
+    setPackSaveLoading(true);
+    setPackSaveMessage(null);
+    setPackSaveError(null);
+
+    try {
+      const response = await fetch("/api/saved-jobs/application-pack", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          savedJobId,
+          applicationPack,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save application pack");
+      }
+
+      setPackSaveMessage("Application Pack saved.");
+    } catch {
+      setPackSaveError("Failed to save Application Pack. Please try again.");
+    } finally {
+      setPackSaveLoading(false);
     }
   };
 
@@ -413,6 +453,38 @@ export function MatchAnalysisModal({
                         : packMessage ||
                           "Fallback version generated because Gemini was unavailable. Review carefully."}
                     </p>
+                  )}
+
+                  <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      {savedJobId
+                        ? "Save this Application Pack to the saved job."
+                        : "Save this job first to save the Application Pack."}
+                    </p>
+                    {savedJobId && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSaveApplicationPack}
+                        disabled={packSaveLoading}
+                      >
+                        {packSaveLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        Save Pack
+                      </Button>
+                    )}
+                  </div>
+
+                  {packSaveMessage && (
+                    <p className="text-sm text-emerald-600">
+                      {packSaveMessage}
+                    </p>
+                  )}
+
+                  {packSaveError && (
+                    <p className="text-sm text-destructive">{packSaveError}</p>
                   )}
 
                   <div>

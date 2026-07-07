@@ -15,6 +15,7 @@ export interface SavedJob extends Job {
   job_id: string;
   match_score?: number;
   match_analysis?: MatchAnalysis;
+  application_pack?: ApplicationPack | null;
   status: "saved" | "applied" | "interview" | "rejected" | "offer";
   created_at: string;
   updated_at: string;
