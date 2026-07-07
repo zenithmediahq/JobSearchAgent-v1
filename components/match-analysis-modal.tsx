@@ -40,12 +40,18 @@ export function MatchAnalysisModal({
     useState<ApplicationPack | null>(null);
   const [packLoading, setPackLoading] = useState(false);
   const [packError, setPackError] = useState<string | null>(null);
+  const [packSource, setPackSource] = useState<"gemini" | "fallback" | null>(
+    null,
+  );
+  const [packMessage, setPackMessage] = useState<string | null>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && job) {
       setApplicationPack(null);
       setPackError(null);
+      setPackSource(null);
+      setPackMessage(null);
       checkCVAndAnalyze();
     }
   }, [open, job]);
@@ -95,6 +101,9 @@ export function MatchAnalysisModal({
 
     setPackLoading(true);
     setPackError(null);
+    setPackSource(null);
+    setPackMessage(null);
+    setApplicationPack(null);
 
     try {
       const response = await fetch("/api/application-pack", {
@@ -114,6 +123,8 @@ export function MatchAnalysisModal({
       }
 
       setApplicationPack(data.applicationPack);
+      setPackSource(data.source);
+      setPackMessage(data.message ?? null);
     } catch {
       setPackError("Failed to generate application pack. Please try again.");
     } finally {
@@ -388,6 +399,22 @@ export function MatchAnalysisModal({
 
               {applicationPack && (
                 <div className="mt-4 space-y-5">
+                  {packSource && (
+                    <p
+                      className={cn(
+                        "rounded-md px-3 py-2 text-sm",
+                        packSource === "gemini"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-amber-50 text-amber-700",
+                      )}
+                    >
+                      {packSource === "gemini"
+                        ? "Generated with Gemini."
+                        : packMessage ||
+                          "Fallback version generated because Gemini was unavailable. Review carefully."}
+                    </p>
+                  )}
+
                   <div>
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium">Short Motivation</p>
