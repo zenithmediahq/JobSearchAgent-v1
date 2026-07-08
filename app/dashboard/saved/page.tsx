@@ -92,6 +92,7 @@ export default function SavedJobsPage() {
       <MatchAnalysisModal
         job={selectedJob}
         savedJobId={selectedJob?.id}
+        initialApplicationPack={selectedJob?.application_pack}
         open={showAnalysisModal}
         onOpenChange={setShowAnalysisModal}
       />

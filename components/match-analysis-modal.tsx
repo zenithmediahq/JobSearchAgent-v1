@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 interface MatchAnalysisModalProps {
   job: Job | null;
   savedJobId?: string;
+  initialApplicationPack?: ApplicationPack | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -31,6 +32,7 @@ interface MatchAnalysisModalProps {
 export function MatchAnalysisModal({
   job,
   savedJobId,
+  initialApplicationPack,
   open,
   onOpenChange,
 }: MatchAnalysisModalProps) {
@@ -49,19 +51,23 @@ export function MatchAnalysisModal({
   const [packSaveLoading, setPackSaveLoading] = useState(false);
   const [packSaveMessage, setPackSaveMessage] = useState<string | null>(null);
   const [packSaveError, setPackSaveError] = useState<string | null>(null);
+  const [isPackSaved, setIsPackSaved] = useState(false);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && job) {
-      setApplicationPack(null);
+      setApplicationPack(initialApplicationPack ?? null);
+      setIsPackSaved(Boolean(initialApplicationPack));
       setPackError(null);
       setPackSource(null);
       setPackMessage(null);
-      setPackSaveMessage(null);
+      setPackSaveMessage(
+        initialApplicationPack ? "Loaded saved Application Pack." : null,
+      );
       setPackSaveError(null);
       checkCVAndAnalyze();
     }
-  }, [open, job]);
+  }, [open, job, initialApplicationPack]);
 
   const checkCVAndAnalyze = async () => {
     setLoading(true);
@@ -111,6 +117,7 @@ export function MatchAnalysisModal({
     setPackSource(null);
     setPackMessage(null);
     setApplicationPack(null);
+    setIsPackSaved(false);
     setPackSaveMessage(null);
     setPackSaveError(null);
 
@@ -132,6 +139,7 @@ export function MatchAnalysisModal({
       }
 
       setApplicationPack(data.applicationPack);
+      setIsPackSaved(false);
       setPackSource(data.source);
       setPackMessage(data.message ?? null);
     } catch {
@@ -165,6 +173,7 @@ export function MatchAnalysisModal({
       }
 
       setPackSaveMessage("Application Pack saved.");
+      setIsPackSaved(true);
     } catch {
       setPackSaveError("Failed to save Application Pack. Please try again.");
     } finally {
@@ -467,12 +476,12 @@ export function MatchAnalysisModal({
                         variant="outline"
                         size="sm"
                         onClick={handleSaveApplicationPack}
-                        disabled={packSaveLoading}
+                        disabled={packSaveLoading || isPackSaved}
                       >
                         {packSaveLoading ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : null}
-                        Save Pack
+                        {isPackSaved ? "Saved" : "Save Pack"}
                       </Button>
                     )}
                   </div>
