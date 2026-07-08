@@ -43,12 +43,13 @@ export function JobCard({
   const [saving, setSaving] = useState(false)
   const { toast } = useToast()
   const savedJob = job as SavedJob
+  const saveButtonLabel = isSaved ? 'Remove from saved jobs' : 'Save job'
 
   const handleSaveToggle = async () => {
     setSaving(true)
     try {
       if (isSaved && onUnsave) {
-        await onUnsave(job.id)
+        await onUnsave('job_id' in job ? job.job_id : job.id)
         toast({
           title: 'Success',
           description: 'Job removed from saved',
@@ -133,6 +134,8 @@ export function JobCard({
               className="h-8 w-8"
               onClick={handleSaveToggle}
               disabled={saving}
+              title={saveButtonLabel}
+              aria-label={saveButtonLabel}
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

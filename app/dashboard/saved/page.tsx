@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react'
 import useSWR from 'swr'
-import { createClient } from '@/lib/supabase/client'
 import { SavedJob } from '@/lib/types'
 import { JobCard } from '@/components/job-card'
 import { MatchAnalysisModal } from '@/components/match-analysis-modal'
@@ -12,22 +11,22 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export default function SavedJobsPage() {
   const { data, error, isLoading, mutate } = useSWR('/api/saved-jobs', fetcher)
-  const supabase = createClient()
   const [selectedJob, setSelectedJob] = useState<SavedJob | null>(null)
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
 
   const handleUnsave = useCallback(async (jobId: string) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const response = await fetch('/api/saved-jobs', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId }),
+    })
 
-    await supabase
-      .from('saved_jobs')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('job_id', jobId)
+    if (!response.ok) {
+      throw new Error('Failed to remove saved job')
+    }
 
     mutate()
-  }, [supabase, mutate])
+  }, [mutate])
 
   const handleAnalyze = useCallback((job: SavedJob) => {
     setSelectedJob(job)
