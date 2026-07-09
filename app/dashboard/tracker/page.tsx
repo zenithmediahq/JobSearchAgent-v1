@@ -7,6 +7,13 @@ import { SavedJob, JobStatus, STATUS_CONFIG } from '@/lib/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import {
   Loader2,
@@ -15,7 +22,6 @@ import {
   MapPin,
   ExternalLink,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 const fetcher = (url: string) => fetch(url).then((res) => {
   if (!res.ok) throw new Error('Failed to fetch')
@@ -152,50 +158,59 @@ interface TrackerCardProps {
 
 function TrackerCard({ job, onStatusChange, isChanging = false }: TrackerCardProps) {
   return (
-    <Card>
-      <CardHeader className="p-3 pb-2">
-        <div className="flex items-start gap-2">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-sm font-medium leading-tight truncate">
-              {job.title}
-            </CardTitle>
-            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1 truncate">
-                <Building2 className="h-3 w-3 shrink-0" />
-                {job.company}
-              </span>
-            </div>
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3 shrink-0" />
-              <span className="truncate">{job.location}</span>
-            </div>
+    <Card className="overflow-hidden">
+      <CardHeader className="space-y-2 p-3 pb-2">
+        <div className="min-w-0">
+          <CardTitle className="line-clamp-2 break-words text-sm font-medium leading-snug">
+            {job.title}
+          </CardTitle>
+        </div>
+        <div className="space-y-1 text-xs text-muted-foreground">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <Building2 className="h-3 w-3 shrink-0" />
+            <span className="truncate">
+              {job.company}
+            </span>
+          </div>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate">
+              {job.location}
+            </span>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-3 pt-0">
-        <div className="flex flex-wrap gap-1">
-          {(Object.keys(STATUS_CONFIG) as JobStatus[]).map((status) => (
-            <Button
-              key={status}
-              variant={job.status === status ? 'default' : 'ghost'}
-              size="sm"
-              className={cn(
-                'h-6 px-2 text-xs',
-                job.status === status && STATUS_CONFIG[status].color
-              )}
-              onClick={() => onStatusChange(job.job_id, status)}
-              disabled={isChanging}
-            >
-              {isChanging && job.status === status ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                STATUS_CONFIG[status].label
-              )}
-            </Button>
-          ))}
+      <CardContent className="space-y-3 p-3 pt-0">
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Status
+            </span>
+            {isChanging && (
+              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+            )}
+          </div>
+          <Select
+            value={job.status}
+            onValueChange={(value) =>
+              onStatusChange(job.job_id, value as JobStatus)
+            }
+            disabled={isChanging}
+          >
+            <SelectTrigger size="sm" className="w-full text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COLUMNS.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {STATUS_CONFIG[status].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         {job.url && job.url !== '#' && (
-          <Button variant="ghost" size="sm" className="mt-2 h-7 w-full justify-start text-xs" asChild>
+          <Button variant="ghost" size="sm" className="h-7 w-full justify-start px-2 text-xs" asChild>
             <a href={job.url} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="mr-1 h-3 w-3" />
               View Job
