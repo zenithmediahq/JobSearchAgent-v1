@@ -31,11 +31,10 @@ export default function ProfilePage() {
     const fileName = file.name.toLowerCase()
     const isSupported =
       fileName.endsWith('.txt') ||
-      fileName.endsWith('.docx') ||
-      fileName.endsWith('.pdf')
+      fileName.endsWith('.docx')
 
     if (!isSupported) {
-      setUploadError('Unsupported file type. Upload TXT, DOCX, or PDF.')
+      setUploadError('Unsupported file type. Upload TXT or DOCX.')
       return
     }
 
@@ -161,7 +160,7 @@ export default function ProfilePage() {
                           Drag and drop your CV here
                         </Label>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          TXT and DOCX are supported. PDF support is coming next.
+                          TXT and DOCX are supported.
                         </p>
                       </div>
 
@@ -174,7 +173,7 @@ export default function ProfilePage() {
                       <input
                         id="cv-upload"
                         type="file"
-                        accept=".txt,.pdf,.docx,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        accept=".txt,.docx,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                         className="hidden"
                         onChange={handleFileInputChange}
                       />
@@ -245,7 +244,7 @@ Education:
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
                   1
                 </span>
-                <p>Paste your CV or upload a TXT file</p>
+                <p>Paste your CV or upload a TXT or DOCX file</p>
               </div>
               <div className="flex gap-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
