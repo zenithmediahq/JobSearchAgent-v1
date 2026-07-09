@@ -38,6 +38,9 @@ export function MatchAnalysisModal({
 }: MatchAnalysisModalProps) {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<MatchAnalysis | null>(null);
+  const [analysisSource, setAnalysisSource] = useState<
+    "gemini" | "fallback" | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const [hasCV, setHasCV] = useState<boolean | null>(null);
   const [applicationPack, setApplicationPack] =
@@ -47,7 +50,6 @@ export function MatchAnalysisModal({
   const [packSource, setPackSource] = useState<"gemini" | "fallback" | null>(
     null,
   );
-  const [packMessage, setPackMessage] = useState<string | null>(null);
   const [packSaveLoading, setPackSaveLoading] = useState(false);
   const [packSaveMessage, setPackSaveMessage] = useState<string | null>(null);
   const [packSaveError, setPackSaveError] = useState<string | null>(null);
@@ -60,11 +62,11 @@ export function MatchAnalysisModal({
       setIsPackSaved(Boolean(initialApplicationPack));
       setPackError(null);
       setPackSource(null);
-      setPackMessage(null);
       setPackSaveMessage(
         initialApplicationPack ? "Loaded saved Application Pack." : null,
       );
       setPackSaveError(null);
+      setAnalysisSource(null);
       checkCVAndAnalyze();
     }
   }, [open, job, initialApplicationPack]);
@@ -73,6 +75,7 @@ export function MatchAnalysisModal({
     setLoading(true);
     setError(null);
     setAnalysis(null);
+    setAnalysisSource(null);
 
     try {
       // Check if user has a CV
@@ -102,6 +105,7 @@ export function MatchAnalysisModal({
 
       const data = await res.json();
       setAnalysis(data.analysis);
+      setAnalysisSource(data.source ?? null);
     } catch {
       setError("Failed to analyze the match. Please try again.");
     } finally {
@@ -115,7 +119,6 @@ export function MatchAnalysisModal({
     setPackLoading(true);
     setPackError(null);
     setPackSource(null);
-    setPackMessage(null);
     setApplicationPack(null);
     setIsPackSaved(false);
     setPackSaveMessage(null);
@@ -141,7 +144,6 @@ export function MatchAnalysisModal({
       setApplicationPack(data.applicationPack);
       setIsPackSaved(false);
       setPackSource(data.source);
-      setPackMessage(data.message ?? null);
     } catch {
       setPackError("Failed to generate application pack. Please try again.");
     } finally {
@@ -279,6 +281,27 @@ export function MatchAnalysisModal({
                 {analysis.summary}
               </p>
             </div>
+
+            {analysisSource === "fallback" && (
+              <div className="flex flex-col gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  Basic fallback analysis generated because AI was unavailable.
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={checkCVAndAnalyze}
+                  disabled={loading}
+                  className="bg-background/80"
+                >
+                  {loading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Retry AI Analysis
+                </Button>
+              </div>
+            )}
 
             {/* Strengths */}
             {analysis.strengths.length > 0 && (
@@ -449,19 +472,35 @@ export function MatchAnalysisModal({
               {applicationPack && (
                 <div className="mt-4 space-y-5">
                   {packSource && (
-                    <p
+                    <div
                       className={cn(
-                        "rounded-md px-3 py-2 text-sm",
+                        "flex flex-col gap-2 rounded-md px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between",
                         packSource === "gemini"
                           ? "bg-emerald-50 text-emerald-700"
                           : "bg-amber-50 text-amber-700",
                       )}
                     >
-                      {packSource === "gemini"
-                        ? "Generated with Gemini."
-                        : packMessage ||
-                          "Fallback version generated because Gemini was unavailable. Review carefully."}
-                    </p>
+                      <span>
+                        {packSource === "gemini"
+                          ? "Generated with Gemini."
+                          : "Basic fallback generated because AI was unavailable."}
+                      </span>
+                      {packSource === "fallback" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleGenerateApplicationPack}
+                          disabled={packLoading}
+                          className="bg-background/80"
+                        >
+                          {packLoading ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : null}
+                          Retry AI
+                        </Button>
+                      )}
+                    </div>
                   )}
 
                   <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
