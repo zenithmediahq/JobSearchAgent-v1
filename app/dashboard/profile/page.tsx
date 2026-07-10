@@ -31,10 +31,11 @@ export default function ProfilePage() {
     const fileName = file.name.toLowerCase()
     const isSupported =
       fileName.endsWith('.txt') ||
-      fileName.endsWith('.docx')
+      fileName.endsWith('.docx') ||
+      fileName.endsWith('.pdf')
 
     if (!isSupported) {
-      setUploadError('Unsupported file type. Upload TXT or DOCX.')
+      setUploadError('Unsupported file type. Upload TXT, DOCX, or PDF.')
       return
     }
 
@@ -160,7 +161,7 @@ export default function ProfilePage() {
                           Drag and drop your CV here
                         </Label>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          TXT and DOCX are supported.
+                          TXT, DOCX, and text-based PDF are supported.
                         </p>
                       </div>
 
@@ -173,7 +174,7 @@ export default function ProfilePage() {
                       <input
                         id="cv-upload"
                         type="file"
-                        accept=".txt,.docx,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        accept=".txt,.docx,.pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
                         className="hidden"
                         onChange={handleFileInputChange}
                       />
@@ -244,7 +245,7 @@ Education:
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
                   1
                 </span>
-                <p>Paste your CV or upload a TXT or DOCX file</p>
+                <p>Paste your CV or upload a TXT, DOCX, or text-based PDF file</p>
               </div>
               <div className="flex gap-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
