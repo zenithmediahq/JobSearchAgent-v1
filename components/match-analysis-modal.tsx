@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Loader2,
   CheckCircle2,
@@ -79,9 +80,11 @@ export function MatchAnalysisModal({
   const [jobSaveError, setJobSaveError] = useState<string | null>(null);
   const [isPackSaved, setIsPackSaved] = useState(false);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("match");
 
   useEffect(() => {
     if (open && job) {
+      setActiveTab("match");
       setCurrentSavedJobId(savedJobId);
       setJobSaveLoading(false);
       setJobSaveError(null);
@@ -365,7 +368,22 @@ export function MatchAnalysisModal({
         )}
 
         {!loading && !error && analysis && (
-          <div className="space-y-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="min-w-0 max-w-full"
+          >
+            <div className="max-w-full overflow-x-auto pb-1">
+              <TabsList className="grid h-auto w-full min-w-[340px] grid-cols-3">
+                <TabsTrigger value="match">Match</TabsTrigger>
+                <TabsTrigger value="ats">ATS Scan</TabsTrigger>
+                <TabsTrigger value="application-pack">
+                  Application Pack
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="match" className="mt-4 min-w-0 space-y-6">
             {/* Score */}
             <div className="text-center">
               <div
@@ -488,7 +506,9 @@ export function MatchAnalysisModal({
               </div>
             )}
 
-            {/* ATS Scan */}
+            </TabsContent>
+
+            <TabsContent value="ats" className="mt-4 min-w-0">
             {analysis.atsScan && (
               <div className="rounded-lg border p-4">
                 <h4 className="flex items-center gap-2 text-sm font-medium">
@@ -537,6 +557,22 @@ export function MatchAnalysisModal({
                   </div>
                 )}
 
+                {analysis.atsScan.foundKeywords.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium">Found Keywords</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {analysis.atsScan.foundKeywords.map((keyword, i) => (
+                        <span
+                          key={i}
+                          className="max-w-full break-words rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {analysis.atsScan.missingKeywords.length > 0 && (
                   <div className="mt-4">
                     <p className="text-sm font-medium">Missing Keywords</p>
@@ -546,7 +582,7 @@ export function MatchAnalysisModal({
                         .map((keyword, i) => (
                           <span
                             key={i}
-                            className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                            className="max-w-full break-words rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
                           >
                             {keyword}
                           </span>
@@ -573,7 +609,17 @@ export function MatchAnalysisModal({
               </div>
             )}
 
-            {/* Application Pack */}
+            {!analysis.atsScan && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No ATS Scan is available for this analysis.
+              </p>
+            )}
+            </TabsContent>
+
+            <TabsContent
+              value="application-pack"
+              className="mt-4 min-w-0"
+            >
             <div className="rounded-lg border p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -769,7 +815,7 @@ export function MatchAnalysisModal({
                         {applicationPack.keywordsToInclude.map((keyword, i) => (
                           <span
                             key={i}
-                            className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                            className="max-w-full break-words rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
                           >
                             {keyword}
                           </span>
@@ -796,7 +842,8 @@ export function MatchAnalysisModal({
                 </div>
               )}
             </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         )}
       </DialogContent>
     </Dialog>
