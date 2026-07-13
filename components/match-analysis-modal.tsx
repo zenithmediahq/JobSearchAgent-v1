@@ -25,6 +25,7 @@ interface MatchAnalysisModalProps {
   job: Job | null;
   savedJobId?: string;
   initialApplicationPack?: ApplicationPack | null;
+  onApplicationPackSaved?: (applicationPack: ApplicationPack) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -33,6 +34,7 @@ export function MatchAnalysisModal({
   job,
   savedJobId,
   initialApplicationPack,
+  onApplicationPackSaved,
   open,
   onOpenChange,
 }: MatchAnalysisModalProps) {
@@ -176,6 +178,7 @@ export function MatchAnalysisModal({
 
       setPackSaveMessage("Application Pack saved.");
       setIsPackSaved(true);
+      onApplicationPackSaved?.(applicationPack);
     } catch {
       setPackSaveError("Failed to save Application Pack. Please try again.");
     } finally {

@@ -2,15 +2,19 @@
 
 import { useCallback, useState } from 'react'
 import useSWR from 'swr'
-import { SavedJob } from '@/lib/types'
+import { ApplicationPack, SavedJob } from '@/lib/types'
 import { JobCard } from '@/components/job-card'
 import { MatchAnalysisModal } from '@/components/match-analysis-modal'
 import { Loader2, BookmarkX } from 'lucide-react'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
+interface SavedJobsResponse {
+  data: SavedJob[]
+}
+
 export default function SavedJobsPage() {
-  const { data, error, isLoading, mutate } = useSWR('/api/saved-jobs', fetcher)
+  const { data, error, isLoading, mutate } = useSWR<SavedJobsResponse>('/api/saved-jobs', fetcher)
   const [selectedJob, setSelectedJob] = useState<SavedJob | null>(null)
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
 
@@ -32,6 +36,20 @@ export default function SavedJobsPage() {
     setSelectedJob(job)
     setShowAnalysisModal(true)
   }, [])
+
+  const handleApplicationPackSaved = useCallback((applicationPack: ApplicationPack) => {
+    mutate(
+      (currentData) => currentData ? {
+        ...currentData,
+        data: currentData.data.map((job: SavedJob) =>
+          job.id === selectedJob?.id
+            ? { ...job, application_pack: applicationPack }
+            : job
+        ),
+      } : currentData,
+      { revalidate: false },
+    )
+  }, [mutate, selectedJob?.id])
 
   const savedJobs: SavedJob[] = data?.data || []
 
@@ -92,6 +110,7 @@ export default function SavedJobsPage() {
         job={selectedJob}
         savedJobId={selectedJob?.id}
         initialApplicationPack={selectedJob?.application_pack}
+        onApplicationPackSaved={handleApplicationPackSaved}
         open={showAnalysisModal}
         onOpenChange={setShowAnalysisModal}
       />
