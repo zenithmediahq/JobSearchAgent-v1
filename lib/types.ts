@@ -14,7 +14,7 @@ export interface SavedJob extends Job {
   user_id: string;
   job_id: string;
   match_score?: number;
-  match_analysis?: MatchAnalysis;
+  match_analysis?: SavedMatchAnalysis | null;
   application_pack?: ApplicationPack | null;
   status: "saved" | "applied" | "interview" | "rejected" | "offer";
   created_at: string;
@@ -37,6 +37,12 @@ export interface MatchAnalysis {
   gaps: string[];
   tips: string[];
   atsScan?: AtsScan;
+}
+
+export type AnalysisSource = "gemini" | "fallback";
+
+export interface SavedMatchAnalysis extends MatchAnalysis {
+  source?: AnalysisSource;
 }
 
 export interface ApplicationPack {

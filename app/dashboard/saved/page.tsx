@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import useSWR from 'swr'
-import { ApplicationPack, SavedJob } from '@/lib/types'
+import { AnalysisSource, ApplicationPack, MatchAnalysis, SavedJob } from '@/lib/types'
 import { JobCard } from '@/components/job-card'
 import { MatchAnalysisModal } from '@/components/match-analysis-modal'
 import { Loader2, BookmarkX } from 'lucide-react'
@@ -44,6 +44,24 @@ export default function SavedJobsPage() {
         data: currentData.data.map((job: SavedJob) =>
           job.id === selectedJob?.id
             ? { ...job, application_pack: applicationPack }
+            : job
+        ),
+      } : currentData,
+      { revalidate: false },
+    )
+  }, [mutate, selectedJob?.id])
+
+  const handleAnalysisSaved = useCallback((analysis: MatchAnalysis, source: AnalysisSource) => {
+    mutate(
+      (currentData) => currentData ? {
+        ...currentData,
+        data: currentData.data.map((job: SavedJob) =>
+          job.id === selectedJob?.id
+            ? {
+                ...job,
+                match_score: analysis.score,
+                match_analysis: { ...analysis, source },
+              }
             : job
         ),
       } : currentData,
@@ -109,6 +127,9 @@ export default function SavedJobsPage() {
       <MatchAnalysisModal
         job={selectedJob}
         savedJobId={selectedJob?.id}
+        initialAnalysis={selectedJob?.match_analysis}
+        initialAnalysisSource={selectedJob?.match_analysis?.source}
+        onAnalysisSaved={handleAnalysisSaved}
         initialApplicationPack={selectedJob?.application_pack}
         onApplicationPackSaved={handleApplicationPackSaved}
         open={showAnalysisModal}

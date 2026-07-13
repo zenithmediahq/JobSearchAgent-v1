@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Job, MatchAnalysis, ApplicationPack } from "@/lib/types";
+import {
+  AnalysisSource,
+  ApplicationPack,
+  Job,
+  MatchAnalysis,
+} from "@/lib/types";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +29,12 @@ import { cn } from "@/lib/utils";
 interface MatchAnalysisModalProps {
   job: Job | null;
   savedJobId?: string;
+  initialAnalysis?: MatchAnalysis | null;
+  initialAnalysisSource?: AnalysisSource | null;
+  onAnalysisSaved?: (
+    analysis: MatchAnalysis,
+    source: AnalysisSource,
+  ) => void;
   initialApplicationPack?: ApplicationPack | null;
   onApplicationPackSaved?: (applicationPack: ApplicationPack) => void;
   open: boolean;
@@ -33,6 +44,9 @@ interface MatchAnalysisModalProps {
 export function MatchAnalysisModal({
   job,
   savedJobId,
+  initialAnalysis,
+  initialAnalysisSource,
+  onAnalysisSaved,
   initialApplicationPack,
   onApplicationPackSaved,
   open,
@@ -40,9 +54,12 @@ export function MatchAnalysisModal({
 }: MatchAnalysisModalProps) {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<MatchAnalysis | null>(null);
-  const [analysisSource, setAnalysisSource] = useState<
-    "gemini" | "fallback" | null
-  >(null);
+  const [analysisSource, setAnalysisSource] =
+    useState<AnalysisSource | null>(null);
+  const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
+  const [analysisSaveError, setAnalysisSaveError] = useState<string | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [hasCV, setHasCV] = useState<boolean | null>(null);
   const [applicationPack, setApplicationPack] =
@@ -68,16 +85,35 @@ export function MatchAnalysisModal({
         initialApplicationPack ? "Loaded saved Application Pack." : null,
       );
       setPackSaveError(null);
-      setAnalysisSource(null);
-      checkCVAndAnalyze();
+      setError(null);
+      setAnalysisSaveError(null);
+
+      if (initialAnalysis) {
+        setLoading(false);
+        setHasCV(true);
+        setAnalysis(initialAnalysis);
+        setAnalysisSource(initialAnalysisSource ?? null);
+        setAnalysisMessage("Loaded saved Match Analysis.");
+      } else {
+        setAnalysisMessage(null);
+        checkCVAndAnalyze();
+      }
     }
-  }, [open, job, initialApplicationPack]);
+  }, [
+    open,
+    job,
+    initialAnalysis,
+    initialAnalysisSource,
+    initialApplicationPack,
+  ]);
 
   const checkCVAndAnalyze = async () => {
     setLoading(true);
     setError(null);
     setAnalysis(null);
     setAnalysisSource(null);
+    setAnalysisMessage(null);
+    setAnalysisSaveError(null);
 
     try {
       // Check if user has a CV
@@ -106,8 +142,42 @@ export function MatchAnalysisModal({
       if (!res.ok) throw new Error("Failed to analyze match");
 
       const data = await res.json();
-      setAnalysis(data.analysis);
-      setAnalysisSource(data.source ?? null);
+      if (data.source !== "gemini" && data.source !== "fallback") {
+        throw new Error("Invalid analysis source");
+      }
+
+      const newAnalysis: MatchAnalysis = data.analysis;
+      const newSource: AnalysisSource = data.source;
+
+      setAnalysis(newAnalysis);
+      setAnalysisSource(newSource);
+
+      if (savedJobId) {
+        try {
+          const saveResponse = await fetch("/api/saved-jobs/match-analysis", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              savedJobId,
+              analysis: newAnalysis,
+              source: newSource,
+            }),
+          });
+
+          const saveData = await saveResponse.json();
+
+          if (!saveResponse.ok) {
+            throw new Error(saveData.error || "Failed to save match analysis");
+          }
+
+          setAnalysisMessage("Match Analysis saved.");
+          onAnalysisSaved?.(newAnalysis, newSource);
+        } catch {
+          setAnalysisSaveError(
+            "Analysis generated, but it could not be saved. Please re-run it to try again.",
+          );
+        }
+      }
     } catch {
       setError("Failed to analyze the match. Please try again.");
     } finally {
@@ -284,6 +354,30 @@ export function MatchAnalysisModal({
                 {analysis.summary}
               </p>
             </div>
+
+            {savedJobId && (
+              <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {analysisMessage ?? "This analysis can be refreshed."}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={checkCVAndAnalyze}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Re-run Analysis
+                </Button>
+              </div>
+            )}
+
+            {analysisSaveError && (
+              <p className="text-sm text-destructive">{analysisSaveError}</p>
+            )}
 
             {analysisSource === "fallback" && (
               <div className="flex flex-col gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700 sm:flex-row sm:items-center sm:justify-between">

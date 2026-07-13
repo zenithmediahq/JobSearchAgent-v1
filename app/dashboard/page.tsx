@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import useSWR from 'swr'
 import { createClient } from '@/lib/supabase/client'
-import { Job, SavedJob } from '@/lib/types'
+import { AnalysisSource, Job, MatchAnalysis, SavedJob } from '@/lib/types'
 import { JobCard } from '@/components/job-card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,6 +32,7 @@ export default function DashboardPage() {
   const [datePosted, setDatePosted] = useState('any')
   const [employmentType, setEmploymentType] = useState('')
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [selectedSavedJob, setSelectedSavedJob] = useState<SavedJob | null>(null)
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
 
   const supabase = createClient()
@@ -63,8 +64,8 @@ export default function DashboardPage() {
     savedJobsData?.data?.map((job: SavedJob) => job.job_id) || []
   )
 
-  const savedJobRowIds = new Map<string, string>(
-    savedJobsData?.data?.map((job: SavedJob) => [job.job_id, job.id]) || []
+  const savedJobsByJobId = new Map<string, SavedJob>(
+    savedJobsData?.data?.map((job: SavedJob) => [job.job_id, job]) || []
   )
 
   const handleSearch = (e: React.FormEvent) => {
@@ -176,13 +177,29 @@ export default function DashboardPage() {
 
   const handleAnalyze = (job: Job) => {
     setSelectedJob(job)
+    setSelectedSavedJob(savedJobsByJobId.get(job.id) ?? null)
     setShowAnalysisModal(true)
   }
 
   const jobs: Job[] = data?.data || []
-  const selectedSavedJobId = selectedJob
-    ? savedJobRowIds.get(selectedJob.id)
-    : undefined
+
+  const handleAnalysisSaved = useCallback((analysis: MatchAnalysis, source: AnalysisSource) => {
+    mutateSavedJobs(
+      (currentData: { data: SavedJob[] } | undefined) => currentData ? {
+        ...currentData,
+        data: currentData.data.map((job) =>
+          job.id === selectedSavedJob?.id
+            ? {
+                ...job,
+                match_score: analysis.score,
+                match_analysis: { ...analysis, source },
+              }
+            : job
+        ),
+      } : currentData,
+      { revalidate: false },
+    )
+  }, [mutateSavedJobs, selectedSavedJob?.id])
 
   return (
     <div className="p-6 lg:p-8">
@@ -309,7 +326,10 @@ export default function DashboardPage() {
 
       <MatchAnalysisModal
         job={selectedJob}
-        savedJobId={selectedSavedJobId}
+        savedJobId={selectedSavedJob?.id}
+        initialAnalysis={selectedSavedJob?.match_analysis}
+        initialAnalysisSource={selectedSavedJob?.match_analysis?.source}
+        onAnalysisSaved={handleAnalysisSaved}
         open={showAnalysisModal}
         onOpenChange={setShowAnalysisModal}
       />
