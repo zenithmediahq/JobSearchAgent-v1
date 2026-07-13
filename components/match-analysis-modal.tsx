@@ -37,6 +37,7 @@ interface MatchAnalysisModalProps {
   ) => void;
   initialApplicationPack?: ApplicationPack | null;
   onApplicationPackSaved?: (applicationPack: ApplicationPack) => void;
+  onSaveJob?: () => Promise<string | undefined>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -49,6 +50,7 @@ export function MatchAnalysisModal({
   onAnalysisSaved,
   initialApplicationPack,
   onApplicationPackSaved,
+  onSaveJob,
   open,
   onOpenChange,
 }: MatchAnalysisModalProps) {
@@ -72,11 +74,17 @@ export function MatchAnalysisModal({
   const [packSaveLoading, setPackSaveLoading] = useState(false);
   const [packSaveMessage, setPackSaveMessage] = useState<string | null>(null);
   const [packSaveError, setPackSaveError] = useState<string | null>(null);
+  const [currentSavedJobId, setCurrentSavedJobId] = useState(savedJobId);
+  const [jobSaveLoading, setJobSaveLoading] = useState(false);
+  const [jobSaveError, setJobSaveError] = useState<string | null>(null);
   const [isPackSaved, setIsPackSaved] = useState(false);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && job) {
+      setCurrentSavedJobId(savedJobId);
+      setJobSaveLoading(false);
+      setJobSaveError(null);
       setApplicationPack(initialApplicationPack ?? null);
       setIsPackSaved(Boolean(initialApplicationPack));
       setPackError(null);
@@ -96,7 +104,7 @@ export function MatchAnalysisModal({
         setAnalysisMessage("Loaded saved Match Analysis.");
       } else {
         setAnalysisMessage(null);
-        checkCVAndAnalyze();
+        checkCVAndAnalyze(savedJobId);
       }
     }
   }, [
@@ -107,7 +115,9 @@ export function MatchAnalysisModal({
     initialApplicationPack,
   ]);
 
-  const checkCVAndAnalyze = async () => {
+  const checkCVAndAnalyze = async (
+    targetSavedJobId = currentSavedJobId,
+  ) => {
     setLoading(true);
     setError(null);
     setAnalysis(null);
@@ -152,13 +162,13 @@ export function MatchAnalysisModal({
       setAnalysis(newAnalysis);
       setAnalysisSource(newSource);
 
-      if (savedJobId) {
+      if (targetSavedJobId) {
         try {
           const saveResponse = await fetch("/api/saved-jobs/match-analysis", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              savedJobId,
+              savedJobId: targetSavedJobId,
               analysis: newAnalysis,
               source: newSource,
             }),
@@ -224,7 +234,7 @@ export function MatchAnalysisModal({
   };
 
   const handleSaveApplicationPack = async () => {
-    if (!savedJobId || !applicationPack) return;
+    if (!currentSavedJobId || !applicationPack) return;
 
     setPackSaveLoading(true);
     setPackSaveMessage(null);
@@ -235,7 +245,7 @@ export function MatchAnalysisModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          savedJobId,
+          savedJobId: currentSavedJobId,
           applicationPack,
         }),
       });
@@ -253,6 +263,30 @@ export function MatchAnalysisModal({
       setPackSaveError("Failed to save Application Pack. Please try again.");
     } finally {
       setPackSaveLoading(false);
+    }
+  };
+
+  const handleSaveJobFirst = async () => {
+    if (!onSaveJob) return;
+
+    setJobSaveLoading(true);
+    setJobSaveError(null);
+
+    try {
+      const newSavedJobId = await onSaveJob();
+
+      if (!newSavedJobId) {
+        throw new Error("Failed to save job");
+      }
+
+      setCurrentSavedJobId(newSavedJobId);
+      setPackSaveMessage(
+        "Job saved. You can now save the Application Pack.",
+      );
+    } catch {
+      setJobSaveError("Failed to save this job. Please try again.");
+    } finally {
+      setJobSaveLoading(false);
     }
   };
 
@@ -323,7 +357,7 @@ export function MatchAnalysisModal({
             <Button
               variant="outline"
               className="mt-4"
-              onClick={checkCVAndAnalyze}
+              onClick={() => checkCVAndAnalyze()}
             >
               Try Again
             </Button>
@@ -355,7 +389,7 @@ export function MatchAnalysisModal({
               </p>
             </div>
 
-            {savedJobId && (
+            {currentSavedJobId && (
               <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-sm text-muted-foreground">
                   {analysisMessage ?? "This analysis can be refreshed."}
@@ -364,7 +398,7 @@ export function MatchAnalysisModal({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={checkCVAndAnalyze}
+                  onClick={() => checkCVAndAnalyze()}
                   disabled={loading}
                 >
                   {loading ? (
@@ -388,7 +422,7 @@ export function MatchAnalysisModal({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={checkCVAndAnalyze}
+                  onClick={() => checkCVAndAnalyze()}
                   disabled={loading}
                   className="bg-background/80"
                 >
@@ -602,11 +636,11 @@ export function MatchAnalysisModal({
 
                   <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-muted-foreground">
-                      {savedJobId
+                      {currentSavedJobId
                         ? "Save this Application Pack to the saved job."
                         : "Save this job first to save the Application Pack."}
                     </p>
-                    {savedJobId && (
+                    {currentSavedJobId ? (
                       <Button
                         type="button"
                         variant="outline"
@@ -619,8 +653,25 @@ export function MatchAnalysisModal({
                         ) : null}
                         {isPackSaved ? "Saved" : "Save Pack"}
                       </Button>
-                    )}
+                    ) : onSaveJob ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSaveJobFirst}
+                        disabled={jobSaveLoading}
+                      >
+                        {jobSaveLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        Save job first
+                      </Button>
+                    ) : null}
                   </div>
+
+                  {jobSaveError && (
+                    <p className="text-sm text-destructive">{jobSaveError}</p>
+                  )}
 
                   {packSaveMessage && (
                     <p className="text-sm text-emerald-600">

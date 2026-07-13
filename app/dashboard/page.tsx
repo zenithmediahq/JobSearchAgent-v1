@@ -110,24 +110,28 @@ export default function DashboardPage() {
         }),
       })
 
+      const responseData = await response.json()
+
       if (!response.ok) {
-        const data = await response.json()
         if (response.status === 409) {
           toast({
             title: 'Already saved',
             description: 'This job is already in your saved list',
           })
+          const refreshedData = await mutateSavedJobs()
+          return refreshedData?.data?.find((savedJob: SavedJob) => savedJob.job_id === job.id)
         } else {
-          throw new Error(data.error || 'Failed to save')
+          throw new Error(responseData.error || 'Failed to save')
         }
-        return
       }
 
-      mutateSavedJobs()
+      const savedJob = responseData.data?.[0] as SavedJob | undefined
+      await mutateSavedJobs()
       toast({
         title: 'Saved',
         description: 'Job added to your saved list',
       })
+      return savedJob
     } catch (error) {
       console.error('[v0] Save job error:', error)
       toast({
@@ -137,6 +141,22 @@ export default function DashboardPage() {
       })
     }
   }, [supabase, mutateSavedJobs, toast])
+
+  const handleSaveSelectedJob = useCallback(async () => {
+    if (!selectedJob) return undefined
+
+    const existingSavedJob = savedJobsByJobId.get(selectedJob.id)
+    if (existingSavedJob) {
+      setSelectedSavedJob(existingSavedJob)
+      return existingSavedJob.id
+    }
+
+    const savedJob = await handleSaveJob(selectedJob)
+    if (!savedJob) return undefined
+
+    setSelectedSavedJob(savedJob)
+    return savedJob.id
+  }, [handleSaveJob, savedJobsByJobId, selectedJob])
 
   const handleUnsaveJob = useCallback(async (jobId: string) => {
     try {
@@ -307,7 +327,9 @@ export default function DashboardPage() {
                 key={job.id}
                 job={job}
                 isSaved={savedJobIds.has(job.id)}
-                onSave={handleSaveJob}
+                onSave={async (job) => {
+                  await handleSaveJob(job)
+                }}
                 onUnsave={handleUnsaveJob}
                 onAnalyze={handleAnalyze}
               />
@@ -330,6 +352,7 @@ export default function DashboardPage() {
         initialAnalysis={selectedSavedJob?.match_analysis}
         initialAnalysisSource={selectedSavedJob?.match_analysis?.source}
         onAnalysisSaved={handleAnalysisSaved}
+        onSaveJob={handleSaveSelectedJob}
         open={showAnalysisModal}
         onOpenChange={setShowAnalysisModal}
       />
