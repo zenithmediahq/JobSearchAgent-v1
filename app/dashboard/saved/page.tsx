@@ -7,10 +7,37 @@ import { JobCard } from '@/components/job-card'
 import { MatchAnalysisModal } from '@/components/match-analysis-modal'
 import { Loader2, BookmarkX } from 'lucide-react'
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
-
 interface SavedJobsResponse {
   data: SavedJob[]
+}
+
+const fetcher = async (url: string): Promise<SavedJobsResponse> => {
+  const response = await fetch(url)
+  let data: unknown
+
+  try {
+    data = await response.json()
+  } catch {
+    throw new Error(
+      response.ok
+        ? 'Saved Jobs returned an invalid response'
+        : 'Failed to load saved jobs',
+    )
+  }
+
+  if (!response.ok) {
+    const message =
+      typeof data === 'object' &&
+      data !== null &&
+      'error' in data &&
+      typeof data.error === 'string'
+        ? data.error
+        : 'Failed to load saved jobs'
+
+    throw new Error(message)
+  }
+
+  return data as SavedJobsResponse
 }
 
 export default function SavedJobsPage() {
